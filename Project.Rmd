@@ -11,6 +11,8 @@ knitr::opts_chunk$set(warning = FALSE)
 
 ```{r}
 setwd("C:/Users/jackw/Documents/R/ma575-project")
+# install.packages("car")
+# install.packages("ggplot")
 library(car)
 library(ggplot2)
 # library(GGally)
@@ -19,9 +21,48 @@ library(ggplot2)
 
 ```{r}
 library(readr)
-facebook <- read_delim("dataset_Facebook(3).csv", 
+facebook <- read_delim("dataset_Facebook.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
 View(facebook)
+```
+
+```{r}
+# str(facebook)
+facebook <- na.omit(facebook)
+
+# type
+facebook$`Type` <- factor(facebook$`Type`)
+str(facebook$`Type`)
+
+# month
+month_names <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+facebook$`Post Month` <- factor(facebook$`Post Month`, levels = 1:12, labels = month_names)
+str(facebook$`Post Month`)
+
+# likes
+facebook$like[is.na(facebook$like)] <- 0
+facebook$log_like <- NA
+facebook$log_like <- log(facebook$`like`)
+
+# facebook$`Page total likes` <- sqrt(facebook$`Page total likes`)
+# facebook$`Page total likes` <- log(facebook$`Page total likes`)
+facebook$`Page total likes` <- 1 / facebook$`Page total likes`
+
+facebook <- na.omit(facebook)
+facebook <- facebook[is.finite(facebook$`Lifetime Post Total Reach`) & is.finite(facebook$log_like) & is.finite(facebook$`Page total likes`), ]
+
+lm_model <- lm(`Lifetime Post Total Reach` ~ `Type` + `Post Month` + log_like + `Page total likes`, data = facebook)
+
+# residuals_lm <- residuals(lm_model3)
+# threshold <- 50 
+# high_residuals <- which(abs(residuals_lm) > threshold)
+# facebook_cleaned <- subset(facebook, !row.names(facebook) %in% high_residuals)
+# lm_model_cleaned <- lm(`Lifetime Post Total Reach` ~  `Type` + log_tot_interact + log_like + hours_factor, data = facebook_cleaned)
+
+summary(lm_model)
+plot(lm_model)
+vif(lm_model)
+
 ```
 
 ```{r}
@@ -41,8 +82,8 @@ facebook$log_like <- log(facebook$`like`)
 plot(density(facebook$log_like))
 
 # workday
-facebook$hours_factor <- ifelse(facebook$`Post Hour` >= 9 & facebook$`Post Hour` < 17, "Workday", "Non-Workday")
-facebook$hours_factor <- factor(facebook$hours_factor, levels = c("Workday", "Non-Workday"))
+facebook$hours_factor <- ifelse(facebook$`Post Hour` >= 9 & facebook$`Post Hour` < 17, "Work", "Non-Work")
+facebook$hours_factor <- factor(facebook$hours_factor, levels = c("Work", "Non-Work"))
 
 # total interactions
 facebook$log_tot_interact <- NA
