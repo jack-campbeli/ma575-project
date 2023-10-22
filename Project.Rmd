@@ -41,19 +41,20 @@ facebook <- na.omit(facebook)
 
 
 ```{r}
-# likes
+# normalizing likes
 facebook$like[is.na(facebook$like)] <- 0
-facebook$like[is.na(facebook$like=='-Inf')] <- 0
 facebook$log_like <- NA
 facebook$log_like <- log(facebook$`like`)
+facebook$like[facebook$like=='-Inf'] <- 0
 
+# normalizing `Lifetime Post Total Reach`
 facebook$lt_post_tot_reach <- NA
 facebook$lt_post_tot_reach <- log(facebook$`Lifetime Post Total Reach`)
 
 facebook <- na.omit(facebook)
 facebook <- facebook[is.finite(facebook$`Lifetime Post Total Reach`) & is.finite(facebook$log_like) & is.finite(facebook$`Page total likes`), ]
 
-lm_model <- lm(lt_post_tot_reach ~ `Type` + `Post Month` + log_like + `Page total likes` + I(log_like^2), data = facebook)
+lm_model <- lm(lt_post_tot_reach ~ `Type` + `Page total likes` + I(log_like^2), data = facebook)
 
 summary(lm_model)
 plot(lm_model)
@@ -61,21 +62,20 @@ vif(lm_model)
 ```
 
 ```{r}
-# likes
+# normalizing likes
 facebook$like[is.na(facebook$like)] <- 0
-facebook$like[is.na(facebook$like=='-Inf')] <- 0
 facebook$log_like <- NA
 facebook$log_like <- log(facebook$`like`)
+facebook$like[facebook$like=='-Inf'] <- 0
 
-plot(density(facebook$`Lifetime People who have liked your Page and engaged with your post`))
+# normalizing `Lifetime People who have liked your Page and engaged with your post`
 facebook$lt_ppl_lkd_egnged <- NA
 facebook$lt_ppl_lkd_egnged <- log(facebook$`Lifetime People who have liked your Page and engaged with your post`)
-plot(density(facebook$lt_ppl_lkd_egnged))
 
 facebook <- na.omit(facebook)
 facebook <- facebook[is.finite(facebook$`Lifetime Post Total Reach`) & is.finite(facebook$log_like) & is.finite(facebook$`Page total likes`), ]
 
-lm_model <- lm(lt_ppl_lkd_egnged ~ `Type` + `Post Month` + log_like + `Page total likes` + I(log_like^2), data = facebook)
+lm_model <- lm(lt_ppl_lkd_egnged ~ `Type` + `Page total likes` + I(log_like^2), data = facebook)
 
 summary(lm_model)
 plot(lm_model)
