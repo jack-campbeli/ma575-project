@@ -23,32 +23,32 @@ library(ggplot2)
 library(readr)
 facebook <- read_delim("dataset_Facebook.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
-# View(facebook)
+View(facebook)
 ```
 
 ```{r}
-facebook <- na.omit(facebook)
-
-# type
+# type factor 
 facebook$`Type` <- factor(facebook$`Type`)
 str(facebook$`Type`)
 
-# month
-month_names <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+# month factor
+month_names <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun" , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 facebook$`Post Month` <- factor(facebook$`Post Month`, levels = 1:12, labels = month_names)
 str(facebook$`Post Month`)
 
+facebook <- na.omit(facebook)
+```
+
+
+```{r}
 # likes
 facebook$like[is.na(facebook$like)] <- 0
 facebook$like[is.na(facebook$like=='-Inf')] <- 0
 facebook$log_like <- NA
 facebook$log_like <- log(facebook$`like`)
 
-plot(density(facebook$`Page total likes`))
-
 facebook$lt_post_tot_reach <- NA
 facebook$lt_post_tot_reach <- log(facebook$`Lifetime Post Total Reach`)
-plot(density(facebook$lt_post_tot_reach))
 
 facebook <- na.omit(facebook)
 facebook <- facebook[is.finite(facebook$`Lifetime Post Total Reach`) & is.finite(facebook$log_like) & is.finite(facebook$`Page total likes`), ]
@@ -59,6 +59,29 @@ summary(lm_model)
 plot(lm_model)
 vif(lm_model)
 ```
+
+```{r}
+# likes
+facebook$like[is.na(facebook$like)] <- 0
+facebook$like[is.na(facebook$like=='-Inf')] <- 0
+facebook$log_like <- NA
+facebook$log_like <- log(facebook$`like`)
+
+plot(density(facebook$`Lifetime People who have liked your Page and engaged with your post`))
+facebook$lt_ppl_lkd_egnged <- NA
+facebook$lt_ppl_lkd_egnged <- log(facebook$`Lifetime People who have liked your Page and engaged with your post`)
+plot(density(facebook$lt_ppl_lkd_egnged))
+
+facebook <- na.omit(facebook)
+facebook <- facebook[is.finite(facebook$`Lifetime Post Total Reach`) & is.finite(facebook$log_like) & is.finite(facebook$`Page total likes`), ]
+
+lm_model <- lm(lt_ppl_lkd_egnged ~ `Type` + `Post Month` + log_like + `Page total likes` + I(log_like^2), data = facebook)
+
+summary(lm_model)
+plot(lm_model)
+vif(lm_model)
+```
+
 
 ```{r}
 # str(facebook)
@@ -85,6 +108,11 @@ facebook$log_tot_interact <- NA
 facebook$log_tot_interact <- log(facebook$`Total Interactions`)
 plot(density(facebook$log_tot_interact))
 
+facebook$like[is.na(facebook$share)] <- 0
+facebook$log_share <- NA
+facebook$log_share <- log(facebook$share)
+plot(density(facebook$log_share))
+
 facebook <- na.omit(facebook)
 facebook <- facebook[is.finite(facebook$share) & is.finite(facebook$log_ltpostreach) & is.finite(facebook$log_like), ]
 
@@ -94,7 +122,8 @@ residuals_lm <- residuals(lm_model3)
 threshold <- 50 
 high_residuals <- which(abs(residuals_lm) > threshold)
 facebook_cleaned <- subset(facebook, !row.names(facebook) %in% high_residuals)
-lm_model_cleaned <- lm(share ~  log_tot_interact + log_like + hours_factor, data = facebook_cleaned)
+
+lm_model_cleaned <- lm(log_share ~ log_tot_interact + log_like + hours_factor + I(log_like^2) + I(log_tot_interact^2), data = facebook_cleaned)
 
 summary(lm_model_cleaned)
 plot(lm_model_cleaned)
