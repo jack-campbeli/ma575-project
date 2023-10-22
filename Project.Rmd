@@ -23,11 +23,10 @@ library(ggplot2)
 library(readr)
 facebook <- read_delim("dataset_Facebook.csv", 
     delim = ";", escape_double = FALSE, trim_ws = TRUE)
-View(facebook)
+# View(facebook)
 ```
 
 ```{r}
-# str(facebook)
 facebook <- na.omit(facebook)
 
 # type
@@ -41,28 +40,24 @@ str(facebook$`Post Month`)
 
 # likes
 facebook$like[is.na(facebook$like)] <- 0
+facebook$like[is.na(facebook$like=='-Inf')] <- 0
 facebook$log_like <- NA
 facebook$log_like <- log(facebook$`like`)
 
-# facebook$`Page total likes` <- sqrt(facebook$`Page total likes`)
-# facebook$`Page total likes` <- log(facebook$`Page total likes`)
-facebook$`Page total likes` <- 1 / facebook$`Page total likes`
+plot(density(facebook$`Page total likes`))
+
+facebook$lt_post_tot_reach <- NA
+facebook$lt_post_tot_reach <- log(facebook$`Lifetime Post Total Reach`)
+plot(density(facebook$lt_post_tot_reach))
 
 facebook <- na.omit(facebook)
 facebook <- facebook[is.finite(facebook$`Lifetime Post Total Reach`) & is.finite(facebook$log_like) & is.finite(facebook$`Page total likes`), ]
 
-lm_model <- lm(`Lifetime Post Total Reach` ~ `Type` + `Post Month` + log_like + `Page total likes`, data = facebook)
-
-# residuals_lm <- residuals(lm_model3)
-# threshold <- 50 
-# high_residuals <- which(abs(residuals_lm) > threshold)
-# facebook_cleaned <- subset(facebook, !row.names(facebook) %in% high_residuals)
-# lm_model_cleaned <- lm(`Lifetime Post Total Reach` ~  `Type` + log_tot_interact + log_like + hours_factor, data = facebook_cleaned)
+lm_model <- lm(lt_post_tot_reach ~ `Type` + `Post Month` + log_like + `Page total likes` + I(log_like^2), data = facebook)
 
 summary(lm_model)
 plot(lm_model)
 vif(lm_model)
-
 ```
 
 ```{r}
